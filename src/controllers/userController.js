@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
+
 // --- Profile Update ---
 const updateUser = async (req, res) => {
   try {

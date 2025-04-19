@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
+const { emailRegex, phoneRegex } = require('../constants/regex');
 
 const register = async (req, res) => {
   try {
@@ -11,12 +12,10 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const phoneRegex = /^\+?\d{10,15}$/;  
     if (!phoneRegex.test(phoneNumber)) {
       return res.status(400).json({ message: "Invalid phone number format" });
     }
@@ -30,7 +29,6 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists with provided email or phone number" });
     }
 
-    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let profileImageUrl = '';
@@ -59,7 +57,6 @@ const register = async (req, res) => {
 
     await newUser.save();
 
-    // Create JWT Token
     const token = jwt.sign(
       {
         id: newUser._id,
@@ -69,7 +66,6 @@ const register = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Exclude password from returned user data
     const { password: _, ...userData } = newUser._doc;
 
     res.status(201).json({
@@ -84,22 +80,31 @@ const register = async (req, res) => {
 
 
 
+
 const login = async (req, res) => {
   try {
     const { email, phoneNumber, password } = req.body;
 
     if (!email && !phoneNumber) {
-      return res.status(400).json("Email or phone number is required");
+      return res.status(400).json({ message: "Email or phone number is required" });
+    }
+
+    if (email && !emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (phoneNumber && !phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
     }
 
     const user = await User.findOne({
       $or: [{ email }, { phoneNumber }],
     });
 
-    if (!user) return res.status(401).json("User not found");
+    if (!user) return res.status(401).json({ message: "User not found" });
 
     const validPass = await bcrypt.compare(password, user.password);
-    if (!validPass) return res.status(401).json("Wrong password");
+    if (!validPass) return res.status(401).json({ message: "Wrong password" });
 
     const token = jwt.sign(
       {
@@ -114,8 +119,9 @@ const login = async (req, res) => {
 
     res.status(200).json({ token, user: userData });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ error: err.message });
   }
 };
+
 
 module.exports = { register, login };
