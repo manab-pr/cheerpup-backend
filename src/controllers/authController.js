@@ -8,11 +8,11 @@ const register = async (req, res) => {
   try {
     const { name, email, phoneNumber, password } = req.body;
 
-    if (!name || !email || !phoneNumber || !password) {
+    if (!name  || !phoneNumber || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (!emailRegex.test(email)) {
+    if (email && !emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
