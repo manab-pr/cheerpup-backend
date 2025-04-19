@@ -202,6 +202,44 @@ const deleteChat = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+const getChatHistory = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      chatHistory: user.apiChatHistory,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getUserDetails = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getUserExercises = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('exercises');
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ exercises: user.exercises });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 module.exports = {
   updateUser,
@@ -212,4 +250,7 @@ module.exports = {
   deleteExercise,
   addChat,
   deleteChat,
+  getChatHistory,
+  getUserDetails,
+  getUserExercises,
 };

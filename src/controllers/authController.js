@@ -83,23 +83,23 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, phoneNumber, password } = req.body;
+    const { identifier, password } = req.body;
 
-    if (!email && !phoneNumber) {
-      return res.status(400).json({ message: "Email or phone number is required" });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Identifier and password are required" });
     }
 
-    if (email && !emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
+    let query;
+
+    if (emailRegex.test(identifier)) {
+      query = { email: identifier };
+    } else if (phoneRegex.test(identifier)) {
+      query = { phoneNumber: identifier };
+    } else {
+      return res.status(400).json({ message: "Identifier must be a valid email or phone number" });
     }
 
-    if (phoneNumber && !phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({ message: "Invalid phone number format" });
-    }
-
-    const user = await User.findOne({
-      $or: [{ email }, { phoneNumber }],
-    });
+    const user = await User.findOne(query);
 
     if (!user) return res.status(401).json({ message: "User not found" });
 
@@ -107,15 +107,12 @@ const login = async (req, res) => {
     if (!validPass) return res.status(401).json({ message: "Wrong password" });
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        isAdmin: user.isAdmin,
-      },
+      { id: user._id, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    const { password: pass, ...userData } = user._doc;
+    const { password: _, ...userData } = user._doc;
 
     res.status(200).json({ token, user: userData });
   } catch (err) {
