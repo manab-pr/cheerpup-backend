@@ -6,7 +6,6 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const openAiRoutes = require('./src/routes/openAiRoutes');
-const moodRoutes = require('./src/routes/moodRoutes');
 
 
 
@@ -31,7 +30,6 @@ app.use('/api', openAiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', openAiRoutes);
-app.use('/api', moodRoutes);
 
 
 // Add more routes...
