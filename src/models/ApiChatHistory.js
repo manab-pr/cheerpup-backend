@@ -11,6 +11,6 @@ const ApiChatHistorySchema = new mongoose.Schema({
       link: { type: String },
     },
   ],
-});
+}, { timestamps: true }); 
 
 module.exports = ApiChatHistorySchema;

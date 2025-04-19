@@ -3,7 +3,6 @@ const ExerciseSchema = require('./Exercise');
 const ApiChatHistorySchema = require('./ApiChatHistory');
 const MoodSchema = require('./Mood');
 
-
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true },
@@ -20,6 +19,7 @@ const UserSchema = new mongoose.Schema({
   apiChatHistory: [ApiChatHistorySchema],
   moods: [MoodSchema], 
   isAdmin: { type: Boolean, default: false },
-});
+  isPremium: { type: Boolean, default: false }
+}, { timestamps: true }); 
 
 module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

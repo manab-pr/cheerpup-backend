@@ -6,6 +6,6 @@ const MoodSchema = new mongoose.Schema({
     type: String,
     enum: ['Rough', 'Low', 'Okay', 'Good', 'Great'],
   },
-});
+}, { timestamps: true }); 
 
 module.exports = MoodSchema;
