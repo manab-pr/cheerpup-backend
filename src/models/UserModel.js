@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
   seriousAlertCount: { type: Number, default: 0 },
   exercises: [ExerciseSchema],
   apiChatHistory: [ApiChatHistorySchema],
-  moods: [MoodSchema], // ✅ we're keeping this
+  moods: [MoodSchema], 
   isAdmin: { type: Boolean, default: false },
 });
 

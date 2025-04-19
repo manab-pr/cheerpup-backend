@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/UserModel');
 const cloudinary = require('cloudinary').v2;
 const { emailRegex, phoneRegex } = require('../constants/regex');
 

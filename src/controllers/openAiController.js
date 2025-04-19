@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/UserModel');
 const openai = require('../config/openai');
 
 // ✅ Utility to validate if YouTube link is likely working
