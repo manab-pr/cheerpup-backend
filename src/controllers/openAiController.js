@@ -1,16 +1,7 @@
 const User = require('../models/user');
 const openai = require('../config/openai');
 
-// ✅ Utility to validate if YouTube link is likely working
-const isLikelyValidYouTubeLink = (link) => {
-  if (!link || typeof link !== 'string') return false;
-  return (
-    link.includes('youtube.com/watch?v=') ||
-    link.includes('youtu.be/')
-  );
-};
-
-// ✅ Controller: Handle user emotion, send to GPT, store & respond
+// ✅ Controller to handle user emotion and respond with GPT output
 const handleUserEmotion = async (req, res) => {
   try {
     const { userId, feelingText } = req.body;
@@ -22,7 +13,6 @@ const handleUserEmotion = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Build GPT prompt from user info + message
     const prompt = buildPrompt(user, feelingText);
 
     const gptRes = await openai.createChatCompletion({
@@ -31,24 +21,23 @@ const handleUserEmotion = async (req, res) => {
         {
           role: 'system',
           content: `
-You are CheerPup, an emotionally intelligent wellness companion and trusted friend.
+You are CheerPup — a caring, emotionally intelligent wellness companion.
 
-Your tone is warm, kind, and human. You're talking to someone who wants emotional support — be real and friendly.
+Always speak like a trusted friend — kind, relaxed, and supportive.
 
 Your tasks:
-- Give a short, supportive message based on how the user feels
-- Suggest 1 calming activity or mental exercise
-- Recommend 1 music track (Hindi, English, Lo-fi, Mood-based)
+- Comfort the user with a short, kind message
+- Suggest a calming or grounding activity
+- Recommend ONE recent music track (Hindi, English, Lo-fi) by **song title only** — NO YouTube link
 
-⚠️ Music Rules (very important):
-- The music **must** be on YouTube and **currently available**
-- Do **not** suggest videos that are private, deleted, or restricted
-- It must be **latest music** (from recent years)
-- No defaulting to “Weightless - Marconi Union”
-- You can use Hindi, English, or Lo-fi based on mood
+⚠️ Music Rules:
+- Only return the song **title** (no links)
+- Must be released in 2012 or later
+- Avoid repeated songs or generic answers like “Weightless”
+- Pick music based on user's mood and emotion
 
-Return the response as raw JSON only — NO markdown, NO code blocks.
-          `.trim(),
+Respond in raw JSON only. Do NOT use markdown or code blocks.
+`.trim(),
         },
         { role: 'user', content: prompt },
       ],
@@ -71,26 +60,23 @@ Return the response as raw JSON only — NO markdown, NO code blocks.
         response: content,
         suggestedActivity: [],
         suggestedExercise: [],
-        suggestedMusicLink: { title: null, link: null },
+        suggestedMusicLink: { title: null },
         mood: { mood: 'Okay', moodRating: 3 },
       };
     }
 
-    // ✅ Validate music link
-    const finalMusicLink = isLikelyValidYouTubeLink(parsed.suggestedMusicLink?.link)
-      ? parsed.suggestedMusicLink
-      : { title: null, link: null };
-
-    // ✅ Save to chat history
+    // ✅ Save chat history with just the song title
     user.apiChatHistory.push({
       userMessage: feelingText,
       systemMessage: parsed.response,
       suggestedExercise: Array.isArray(parsed.suggestedExercise) ? parsed.suggestedExercise : [],
       suggestedActivity: Array.isArray(parsed.suggestedActivity) ? parsed.suggestedActivity : [],
-      suggestedMusicLink: finalMusicLink,
+      suggestedMusicLink: parsed.suggestedMusicLink?.title
+        ? { title: parsed.suggestedMusicLink.title }
+        : { title: null },
     });
 
-    // ✅ Save mood
+    // ✅ Save mood if available
     if (parsed.mood) {
       user.moods.push({
         mood: parsed.mood.mood,
@@ -100,12 +86,14 @@ Return the response as raw JSON only — NO markdown, NO code blocks.
 
     await user.save();
 
-    // ✅ Return to frontend
+    // ✅ Respond to frontend
     res.json({
       response: parsed.response,
       suggestedActivity: parsed.suggestedActivity,
       suggestedExercise: parsed.suggestedExercise,
-      suggestedMusicLink: finalMusicLink,
+      suggestedMusicLink: parsed.suggestedMusicLink?.title
+        ? { title: parsed.suggestedMusicLink.title }
+        : { title: null },
       mood: parsed.mood,
     });
 
@@ -115,7 +103,7 @@ Return the response as raw JSON only — NO markdown, NO code blocks.
   }
 };
 
-// ✅ GPT Prompt Builder (includes user background)
+// ✅ Builds dynamic GPT prompt using user info and feeling
 function buildPrompt(user, feelingText) {
   const qna = [];
 
@@ -162,12 +150,11 @@ The user just said: "${feelingText}"
 Please respond in this JSON format:
 
 {
-  "response": "short & kind message",
-  "suggestedActivity": ["..."],  // calming, doable now
-  "suggestedExercise": ["..."],  // optional, mental/physical
+  "response": "short supportive message",
+  "suggestedActivity": ["..."],
+  "suggestedExercise": ["..."],
   "suggestedMusicLink": {
-    "title": "title of track",
-    "link": "valid public YouTube URL"
+    "title": "Only the title of the song — no link"
   },
   "mood": {
     "mood": "Rough" | "Low" | "Okay" | "Good" | "Great",
@@ -175,12 +162,11 @@ Please respond in this JSON format:
   }
 }
 
-⚠️ Instructions:
-- Music must be recent and working on YouTube
-- NEVER return links that are deleted/private
-- Prefer Hindi, English, Lo-fi songs — choose based on user mood
-- Don’t suggest the same song again and again
-- Return valid JSON only (no markdown or code blocks)`;
+✅ Rules:
+- Only give the song name (no link)
+- Must be released in 2012 or after
+- Be emotionally intelligent and human
+- JSON only — no markdown`;
 }
 
 module.exports = { handleUserEmotion };

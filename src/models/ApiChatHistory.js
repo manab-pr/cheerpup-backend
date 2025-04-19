@@ -5,12 +5,9 @@ const ApiChatHistorySchema = new mongoose.Schema({
   systemMessage: { type: String, required: false },
   suggestedExercise: [{ type: String }],
   suggestedActivity: [{ type: String }],
-  suggestedMusicLinks: [
-    {
-      title: { type: String },
-      link: { type: String },
-    },
-  ],
+  suggestedMusicLink: {
+    title: { type: String },
+  },
 });
 
 module.exports = ApiChatHistorySchema;
