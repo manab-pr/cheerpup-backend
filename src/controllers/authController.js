@@ -1,13 +1,14 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-export const register = async (req, res) => {
+const register = async (req, res) => {
   try {
     const { name, email, phoneNumber, password } = req.body;
 
-    if (!email && !phoneNumber)
+    if (!email && !phoneNumber) {
       return res.status(400).json("Email or phone number is required");
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -25,12 +26,13 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, phoneNumber, password } = req.body;
 
-    if (!email && !phoneNumber)
+    if (!email && !phoneNumber) {
       return res.status(400).json("Email or phone number is required");
+    }
 
     const user = await User.findOne({
       $or: [{ email }, { phoneNumber }],
@@ -57,3 +59,5 @@ export const login = async (req, res) => {
     res.status(500).json(err.message);
   }
 };
+
+module.exports = { register, login };

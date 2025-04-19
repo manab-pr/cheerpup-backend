@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
-import ExerciseSchema from './Exercise.js';
-import ApiChatHistorySchema from './ApiChatHistory.js';
-import MoodSchema from './Mood.js';
+const mongoose = require('mongoose');
+const ExerciseSchema = require('./Exercise');
+const ApiChatHistorySchema = require('./ApiChatHistory');
+const MoodSchema = require('./Mood');
 
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, unique: true, sparse: true }, 
+  email: { type: String, unique: true, sparse: true },
   phoneNumber: { type: String, unique: true, sparse: true },
-  password: { type: String, required: true }, 
+  password: { type: String, required: true },
   age: { type: Number },
   gender: { type: String },
   isPhysicalHelpBefore: { type: Boolean },
@@ -17,9 +17,7 @@ const UserSchema = new mongoose.Schema({
   apiChatHistory: [ApiChatHistorySchema],
   moods: [MoodSchema],
   seriousAlertCount: { type: Number, default: 0 },
-  isAdmin: { type: Boolean, default: false }, 
+  isAdmin: { type: Boolean, default: false },
 });
 
-const User = mongoose.model('User', UserSchema);
-
-export default User;
+module.exports = mongoose.model('User', UserSchema);
