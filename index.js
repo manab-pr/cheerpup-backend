@@ -24,8 +24,8 @@ cloudinary.v2.config({
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/user', userRoutes);
 // Add more routes...
 
 const PORT = process.env.PORT || 5000;

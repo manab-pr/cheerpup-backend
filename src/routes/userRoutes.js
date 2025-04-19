@@ -9,11 +9,12 @@ const {
   deleteChat,
 } = require('../controllers/userController');
 const { verifyTokenandAuthorization } = require('../middlewares/verifyToken');
+const { singleUpload } = require('../middlewares/multer');
 
 const router = express.Router();
 
 // Profile update & password
-router.put('/:id', verifyTokenandAuthorization, updateUser);
+router.put('/:id', verifyTokenandAuthorization, singleUpload, updateUser);
 router.put('/password/:id', verifyTokenandAuthorization, changePassword);
 
 // Exercises

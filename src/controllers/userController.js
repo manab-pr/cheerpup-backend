@@ -4,16 +4,43 @@ const User = require('../models/User');
 // --- Profile Update ---
 const updateUser = async (req, res) => {
   try {
-    const fields = ['name', 'email', 'age', 'gender', 'isPhysicalHelpBefore', 'isPhysicalDistress', 'medicines', 'seriousAlertCount'];
+    const fields = [
+      'name', 'email', 'age', 'gender',
+      'isPhysicalHelpBefore', 'isPhysicalDistress',
+      'medicines', 'seriousAlertCount'
+    ];
 
     const updateData = {};
+
+    // Update fields from body
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
         updateData[field] = req.body[field];
       }
     });
 
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
+    // Handle profile image upload if present
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+
+      updateData.profileImage = result.secure_url;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    );
+
     res.status(200).json(updatedUser);
   } catch (err) {
     res.status(500).json(err.message);
