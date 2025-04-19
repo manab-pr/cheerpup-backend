@@ -7,8 +7,30 @@ const register = async (req, res) => {
   try {
     const { name, email, phoneNumber, password } = req.body;
 
-    if (!phoneNumber) return res.status(400).json("Phone number is required");
+    if (!name || !email || !phoneNumber || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const phoneRegex = /^\+?\d{10,15}$/;  
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists with provided email or phone number" });
+    }
+
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let profileImageUrl = '';
