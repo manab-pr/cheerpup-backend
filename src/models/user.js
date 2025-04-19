@@ -16,8 +16,8 @@ const UserSchema = new mongoose.Schema({
   seriousAlertCount: { type: Number, default: 0 },
   exercises: [ExerciseSchema],
   apiChatHistory: [ApiChatHistorySchema],
-  moods: [MoodSchema],
+  moods: [MoodSchema], // ✅ we're keeping this
   isAdmin: { type: Boolean, default: false },
 });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

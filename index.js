@@ -5,7 +5,10 @@ const cloudinary = require('cloudinary');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
-// Add other routes as needed
+const openAiRoutes = require('./src/routes/openAiRoutes');
+const moodRoutes = require('./src/routes/moodRoutes');
+
+
 
 dotenv.config();
 
@@ -24,9 +27,14 @@ cloudinary.v2.config({
 });
 
 // Routes
+app.use('/api', openAiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api', openAiRoutes);
+app.use('/api', moodRoutes);
+
+
 // Add more routes...
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
