@@ -3,6 +3,7 @@ const ExerciseSchema = require('./Exercise');
 const ApiChatHistorySchema = require('./ApiChatHistory');
 const MoodSchema = require('./Mood');
 
+
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true },
@@ -17,7 +18,7 @@ const UserSchema = new mongoose.Schema({
   seriousAlertCount: { type: Number, default: 0 },
   exercises: [ExerciseSchema],
   apiChatHistory: [ApiChatHistorySchema],
-  moods: [MoodSchema], // ✅ we're keeping this
+  moods: [MoodSchema], 
   isAdmin: { type: Boolean, default: false },
 });
 
