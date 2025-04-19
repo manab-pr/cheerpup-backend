@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const User = require('../models/User');
 const openai = require('../config/openai');
 
 // ✅ Controller to handle user emotion and respond with GPT output
