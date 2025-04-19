@@ -1,6 +1,16 @@
 const User = require('../models/User');
 const openai = require('../config/openai');
 
+// ✅ Utility to validate if YouTube link is likely working
+const isLikelyValidYouTubeLink = (link) => {
+  if (!link || typeof link !== 'string') return false;
+  return (
+    link.includes('youtube.com/watch?v=') ||
+    link.includes('youtu.be/')
+  );
+};
+
+// ✅ Controller: Handle user emotion, send to GPT, store & respond
 const handleUserEmotion = async (req, res) => {
   try {
     const { userId, feelingText } = req.body;
@@ -12,12 +22,34 @@ const handleUserEmotion = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    // Build GPT prompt from user info + message
     const prompt = buildPrompt(user, feelingText);
 
     const gptRes = await openai.createChatCompletion({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'You are a supportive mental health assistant.' },
+        {
+          role: 'system',
+          content: `
+You are CheerPup, an emotionally intelligent wellness companion and trusted friend.
+
+Your tone is warm, kind, and human. You're talking to someone who wants emotional support — be real and friendly.
+
+Your tasks:
+- Give a short, supportive message based on how the user feels
+- Suggest 1 calming activity or mental exercise
+- Recommend 1 music track (Hindi, English, Lo-fi, Mood-based)
+
+⚠️ Music Rules (very important):
+- The music **must** be on YouTube and **currently available**
+- Do **not** suggest videos that are private, deleted, or restricted
+- It must be **latest music** (from recent years)
+- No defaulting to “Weightless - Marconi Union”
+- You can use Hindi, English, or Lo-fi based on mood
+
+Return the response as raw JSON only — NO markdown, NO code blocks.
+          `.trim(),
+        },
         { role: 'user', content: prompt },
       ],
     });
@@ -37,22 +69,28 @@ const handleUserEmotion = async (req, res) => {
       console.warn('⚠️ GPT response not valid JSON.');
       parsed = {
         response: content,
-        suggestedActivity: null,
-        suggestedExercise: null,
+        suggestedActivity: [],
+        suggestedExercise: [],
         suggestedMusicLink: { title: null, link: null },
         mood: { mood: 'Okay', moodRating: 3 },
       };
     }
 
-    // ✅ Save chat + mood history
+    // ✅ Validate music link
+    const finalMusicLink = isLikelyValidYouTubeLink(parsed.suggestedMusicLink?.link)
+      ? parsed.suggestedMusicLink
+      : { title: null, link: null };
+
+    // ✅ Save to chat history
     user.apiChatHistory.push({
       userMessage: feelingText,
       systemMessage: parsed.response,
-      suggestedExercise: parsed.suggestedExercise,
-      suggestedActivity: parsed.suggestedActivity,
-      suggestedMusicLink: parsed.suggestedMusicLink || { title: null, link: null },
+      suggestedExercise: Array.isArray(parsed.suggestedExercise) ? parsed.suggestedExercise : [],
+      suggestedActivity: Array.isArray(parsed.suggestedActivity) ? parsed.suggestedActivity : [],
+      suggestedMusicLink: finalMusicLink,
     });
 
+    // ✅ Save mood
     if (parsed.mood) {
       user.moods.push({
         mood: parsed.mood.mood,
@@ -62,11 +100,12 @@ const handleUserEmotion = async (req, res) => {
 
     await user.save();
 
+    // ✅ Return to frontend
     res.json({
       response: parsed.response,
       suggestedActivity: parsed.suggestedActivity,
       suggestedExercise: parsed.suggestedExercise,
-      suggestedMusicLink: parsed.suggestedMusicLink || { title: null, link: null },
+      suggestedMusicLink: finalMusicLink,
       mood: parsed.mood,
     });
 
@@ -76,6 +115,7 @@ const handleUserEmotion = async (req, res) => {
   }
 };
 
+// ✅ GPT Prompt Builder (includes user background)
 function buildPrompt(user, feelingText) {
   const qna = [];
 
@@ -104,6 +144,13 @@ function buildPrompt(user, feelingText) {
     qna.push(`- Last Mood: ${lastMood.mood} (${lastMood.moodRating}/5)`);
   }
 
+  if (user.apiChatHistory?.length) {
+    const last = user.apiChatHistory[user.apiChatHistory.length - 1];
+    if (last?.suggestedMusicLink?.title) {
+      qna.push(`- Last Music Suggested: "${last.suggestedMusicLink.title}"`);
+    }
+  }
+
   const background = qna.length
     ? `Here is some background info about the user:\n${qna.join('\n')}`
     : `The user hasn't provided much background info.`;
@@ -112,16 +159,28 @@ function buildPrompt(user, feelingText) {
 
 The user just said: "${feelingText}"
 
-Please respond supportively, and include:
-- "response": the empathetic reply
-- "suggestedActivity": something light and calming they can do right now
-- "suggestedExercise": a helpful physical or mental exercise, or null if not needed
-- "suggestedMusicLink": an object with a "title" and "link" to a relaxing track
-- "mood": an object with:
-  - "mood": one of ['Rough', 'Low', 'Okay', 'Good', 'Great']
-  - "moodRating": number between 1 (lowest) and 5 (best)
+Please respond in this JSON format:
 
-Return strictly valid JSON. No code blocks or markdown.`;
+{
+  "response": "short & kind message",
+  "suggestedActivity": ["..."],  // calming, doable now
+  "suggestedExercise": ["..."],  // optional, mental/physical
+  "suggestedMusicLink": {
+    "title": "title of track",
+    "link": "valid public YouTube URL"
+  },
+  "mood": {
+    "mood": "Rough" | "Low" | "Okay" | "Good" | "Great",
+    "moodRating": 1 to 5
+  }
+}
+
+⚠️ Instructions:
+- Music must be recent and working on YouTube
+- NEVER return links that are deleted/private
+- Prefer Hindi, English, Lo-fi songs — choose based on user mood
+- Don’t suggest the same song again and again
+- Return valid JSON only (no markdown or code blocks)`;
 }
 
 module.exports = { handleUserEmotion };
