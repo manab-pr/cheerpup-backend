@@ -75,10 +75,18 @@ const changePassword = async (req, res) => {
 // --- Exercises ---
 const addExercise = async (req, res) => {
   try {
-    const { name, durationInDays, streak } = req.body;
+    const { name, durationInDays } = req.body;
 
     const user = await User.findById(req.params.id);
-    user.exercises.push({ name, durationInDays, streak });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.exercises.push({
+      name,
+      durationInDays,
+      streak: [],        
+      lastUpdated: null, 
+    });
+
     await user.save();
 
     res.status(200).json({
@@ -89,6 +97,7 @@ const addExercise = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 const markExerciseAsDone = async (req, res) => {
   try {
