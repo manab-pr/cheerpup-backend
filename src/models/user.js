@@ -13,10 +13,10 @@ const UserSchema = new mongoose.Schema({
   isPhysicalHelpBefore: { type: Boolean },
   isPhysicalDistress: { type: Boolean },
   medicines: [{ type: String }],
+  seriousAlertCount: { type: Number, default: 0 },
   exercises: [ExerciseSchema],
   apiChatHistory: [ApiChatHistorySchema],
   moods: [MoodSchema],
-  seriousAlertCount: { type: Number, default: 0 },
   isAdmin: { type: Boolean, default: false },
 });
 

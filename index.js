@@ -4,6 +4,7 @@ const cors = require('cors');
 const cloudinary = require('cloudinary');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 // Add other routes as needed
 
 dotenv.config();
@@ -24,6 +25,7 @@ cloudinary.v2.config({
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 // Add more routes...
 
 const PORT = process.env.PORT || 5000;

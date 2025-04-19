@@ -1,22 +1,34 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const cloudinary = require('cloudinary').v2;
 
 const register = async (req, res) => {
   try {
     const { name, email, phoneNumber, password } = req.body;
 
-    if (!email && !phoneNumber) {
-      return res.status(400).json("Email or phone number is required");
-    }
+    if (!phoneNumber) return res.status(400).json("Phone number is required");
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    let profileImageUrl = '';
+    if (req.file) {
+      const result = await cloudinary.uploader.upload_stream(
+        { resource_type: 'image' },
+        (error, result) => {
+          if (error) throw new Error(error);
+          profileImageUrl = result.secure_url;
+        }
+      );
+      req.file.stream.pipe(result);
+    }
 
     const newUser = new User({
       name,
       email,
       phoneNumber,
       password: hashedPassword,
+      profileImage: profileImageUrl,
     });
 
     await newUser.save();
