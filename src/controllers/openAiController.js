@@ -1,48 +1,71 @@
 const User = require('../models/User');
 const openai = require('../config/openai');
 
-// ✅ Controller to handle user emotion and respond with GPT output
+/**
+ * Controller: Handle user's emotional input and generate a friendly,
+ * caring response using OpenAI GPT, personalized with their data.
+ * 
+ * This route is token-protected. We extract the userId from the decoded token
+ * attached by the verifyToken middleware.
+ */
 const handleUserEmotion = async (req, res) => {
   try {
-    const { userId, feelingText } = req.body;
+    // 🔐 User ID is pulled from the token (auth middleware already validated it)
+    const userId = req.user.id;
+    const { feelingText } = req.body;
 
-    if (!userId || !feelingText) {
-      return res.status(400).json({ error: 'userId and feelingText are required' });
+    if (!feelingText) {
+      return res.status(400).json({ error: 'feelingText is required' });
     }
 
+    // 🔍 Fetch the full user from the database
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    // 📦 Construct a personalized prompt using user history
     const prompt = buildPrompt(user, feelingText);
 
+    // 🤖 Send prompt to OpenAI GPT
     const gptRes = await openai.createChatCompletion({
       model: 'gpt-4o',
       messages: [
         {
           role: 'system',
           content: `
-You are CheerPup — a caring, emotionally intelligent wellness companion.
+You are CheerPup — a warm, emotionally intelligent companion and the user's safe space.
 
-Always speak like a trusted friend — kind, relaxed, and supportive.
+You're not a therapist or coach — you're like a trusted best friend: compassionate, emotionally present, and uplifting.
 
-Your tasks:
-- Comfort the user with a short, kind message
-- Suggest a calming or grounding activity
-- Recommend ONE recent music track (Hindi, English, Lo-fi) by **song title only** — NO YouTube link
+When someone shares how they're feeling, you:
+- Respond like a real friend would
+- Use supportive, friendly, natural tone (avoid robotic or generic language)
+- Validate their feelings warmly
+- Suggest one calming, low-effort activity or mindfulness practice
+- Recommend one recent, emotionally fitting **song title** (no links)
 
-⚠️ Music Rules:
-- Only return the song **title** (no links)
+🎵 MUSIC RULES:
 - Must be released in 2012 or later
-- Avoid repeated songs or generic answers like “Weightless”
-- Pick music based on user's mood and emotion
+- Must match the user's emotional state (happy, anxious, down, relaxed, etc.)
+- Avoid repeating songs or overused choices like "Weightless"
+- Only return the song **title** (no YouTube links)
 
-Respond in raw JSON only. Do NOT use markdown or code blocks.
-`.trim(),
+📦 OUTPUT FORMAT:
+Respond with a **JSON object only** — no markdown, no formatting.
+
+You’ll be given:
+- User's mood history, medication, background, and most recent message
+
+Be emotionally present. Write from the heart like a real friend would.
+          `.trim(),
         },
-        { role: 'user', content: prompt },
+        {
+          role: 'user',
+          content: prompt, // ← includes user background + feelingText
+        },
       ],
     });
 
+    // 🧹 Parse GPT response and ensure valid structure
     const content = gptRes.data.choices[0].message.content;
 
     let parsed;
@@ -55,6 +78,7 @@ Respond in raw JSON only. Do NOT use markdown or code blocks.
 
       parsed = JSON.parse(cleaned);
     } catch (err) {
+      // If GPT didn't return valid JSON, fallback to raw content as response
       console.warn('⚠️ GPT response not valid JSON.');
       parsed = {
         response: content,
@@ -65,7 +89,7 @@ Respond in raw JSON only. Do NOT use markdown or code blocks.
       };
     }
 
-    // ✅ Save chat history with just the song title
+    // 🗂️ Add GPT response to user’s chat history
     user.apiChatHistory.push({
       userMessage: feelingText,
       systemMessage: parsed.response,
@@ -76,7 +100,7 @@ Respond in raw JSON only. Do NOT use markdown or code blocks.
         : { title: null },
     });
 
-    // ✅ Save mood if available
+    // 🧠 Save user's interpreted mood snapshot from GPT
     if (parsed.mood) {
       user.moods.push({
         mood: parsed.mood.mood,
@@ -86,7 +110,7 @@ Respond in raw JSON only. Do NOT use markdown or code blocks.
 
     await user.save();
 
-    // ✅ Respond to frontend
+    // ✅ Send GPT reply back to the client
     res.json({
       response: parsed.response,
       suggestedActivity: parsed.suggestedActivity,
@@ -98,12 +122,19 @@ Respond in raw JSON only. Do NOT use markdown or code blocks.
     });
 
   } catch (err) {
-    console.error('Chat error:', err);
+    console.error('💥 Chat error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-// ✅ Builds dynamic GPT prompt using user info and feeling
+/**
+ * 🔧 buildPrompt(user, feelingText)
+ * Creates a context-rich prompt with personalized data:
+ * - mood history
+ * - medication
+ * - last song
+ * - basic demographic info
+ */
 function buildPrompt(user, feelingText) {
   const qna = [];
 
@@ -143,6 +174,7 @@ function buildPrompt(user, feelingText) {
     ? `Here is some background info about the user:\n${qna.join('\n')}`
     : `The user hasn't provided much background info.`;
 
+  // 🧠 Final full prompt for GPT
   return `${background}
 
 The user just said: "${feelingText}"
@@ -163,10 +195,10 @@ Please respond in this JSON format:
 }
 
 ✅ Rules:
-- Only give the song name (no link)
-- Must be released in 2012 or after
-- Be emotionally intelligent and human
-- JSON only — no markdown`;
+- Only return the song name (no link)
+- Song must be released in 2012 or later
+- Match the user's mood
+- JSON only — no markdown or formatting`;
 }
 
 module.exports = { handleUserEmotion };

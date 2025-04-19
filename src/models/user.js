@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true, sparse: true },
   phoneNumber: { type: String, unique: true, sparse: true },
   password: { type: String, required: true },
+  profileImage: { type: String },
   age: { type: Number },
   gender: { type: String },
   isPhysicalHelpBefore: { type: Boolean },

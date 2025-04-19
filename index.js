@@ -7,8 +7,6 @@ const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const openAiRoutes = require('./src/routes/openAiRoutes');
 
-
-
 dotenv.config();
 
 const app = express();
@@ -26,13 +24,9 @@ cloudinary.v2.config({
 });
 
 // Routes
-app.use('/api', openAiRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api', openAiRoutes);
-
-
-// Add more routes...
+app.use('/api/v1/openai', openAiRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/user', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
