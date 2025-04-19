@@ -13,14 +13,18 @@ const register = async (req, res) => {
 
     let profileImageUrl = '';
     if (req.file) {
-      const result = await cloudinary.uploader.upload_stream(
-        { resource_type: 'image' },
-        (error, result) => {
-          if (error) throw new Error(error);
-          profileImageUrl = result.secure_url;
-        }
-      );
-      req.file.stream.pipe(result);
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+
+      profileImageUrl = result.secure_url;
     }
 
     const newUser = new User({
@@ -32,11 +36,31 @@ const register = async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json("User registered successfully", {user: userData});
+
+    // Create JWT Token
+    const token = jwt.sign(
+      {
+        id: newUser._id,
+        isAdmin: newUser.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Exclude password from returned user data
+    const { password: _, ...userData } = newUser._doc;
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: userData,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ error: err.message });
   }
 };
+
+
 
 const login = async (req, res) => {
   try {
