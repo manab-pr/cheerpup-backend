@@ -7,6 +7,7 @@ const {
   deleteExercise,
   addChat,
   deleteChat,
+  markExerciseAsDone
 } = require('../controllers/userController');
 const { verifyTokenandAuthorization } = require('../middlewares/verifyToken');
 const { singleUpload } = require('../middlewares/multer');
@@ -20,6 +21,11 @@ router.put('/password/:id', verifyTokenandAuthorization, changePassword);
 // Exercises
 router.post('/exercise/:id', verifyTokenandAuthorization, addExercise);
 router.put('/exercise/:userId/:exerciseId', verifyTokenandAuthorization, updateExercise);
+router.put(
+  '/exercise/:id/:exerciseId/done',
+  verifyTokenandAuthorization,
+  markExerciseAsDone
+);
 router.delete('/exercise/:userId/:exerciseId', verifyTokenandAuthorization, deleteExercise);
 
 // Chat History

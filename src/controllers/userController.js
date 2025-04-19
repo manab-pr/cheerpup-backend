@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-
 // --- Profile Update ---
 const updateUser = async (req, res) => {
   try {
@@ -42,9 +41,12 @@ const updateUser = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json(updatedUser);
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -55,15 +57,18 @@ const changePassword = async (req, res) => {
 
     const user = await User.findById(req.params.id);
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) return res.status(401).json("Old password is incorrect");
+    if (!isMatch) return res.status(401).json({ message: "Old password is incorrect" });
 
     const hashed = await bcrypt.hash(newPassword, 10);
     user.password = hashed;
     await user.save();
 
-    res.status(200).json("Password updated");
+    res.status(200).json({
+      message: "Password updated successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -76,24 +81,69 @@ const addExercise = async (req, res) => {
     user.exercises.push({ name, durationInDays, streak });
     await user.save();
 
-    res.status(200).json("Exercise added");
+    res.status(200).json({
+      message: "Exercise added successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
+
+const markExerciseAsDone = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+if (!user) return res.status(404).json("User not found");
+
+const exercise = user.exercises.id(req.params.exerciseId);
+if (!exercise) return res.status(404).json("Exercise not found");
+
+    const today = new Date();
+    const lastUpdated = exercise.lastUpdated ? new Date(exercise.lastUpdated) : null;
+
+    let missedDays = 0;
+
+    if (lastUpdated) {
+      const diffTime = today.setHours(0, 0, 0, 0) - lastUpdated.setHours(0, 0, 0, 0);
+      missedDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    } else {
+      // If it's the first time, assume all previous days were missed
+      missedDays = 0;
+    }
+
+    // Fill missed days with 0
+    for (let i = 0; i < missedDays; i++) {
+      exercise.streak.push(0);
+    }
+
+    // Push 1 for today
+    exercise.streak.push(1);
+    exercise.lastUpdated = new Date();
+
+    await user.save();
+
+    res.status(200).json("Exercise marked as done for today");
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 const updateExercise = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     const exercise = user.exercises.id(req.params.exerciseId);
-    if (!exercise) return res.status(404).json("Exercise not found");
+    if (!exercise) return res.status(404).json({ message: "Exercise not found" });
 
     Object.assign(exercise, req.body);
     await user.save();
 
-    res.status(200).json("Exercise updated");
+    res.status(200).json({
+      message: "Exercise updated successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -102,9 +152,13 @@ const deleteExercise = async (req, res) => {
     const user = await User.findById(req.params.userId);
     user.exercises.id(req.params.exerciseId).remove();
     await user.save();
-    res.status(200).json("Exercise removed");
+
+    res.status(200).json({
+      message: "Exercise deleted successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -116,9 +170,12 @@ const addChat = async (req, res) => {
     user.apiChatHistory.push({ userMessage, systemMessage, suggestedExercise, suggestedActivity });
     await user.save();
 
-    res.status(200).json("Chat history added");
+    res.status(200).json({
+      message: "Chat history added successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -127,9 +184,13 @@ const deleteChat = async (req, res) => {
     const user = await User.findById(req.params.id);
     user.apiChatHistory.id(req.params.chatId).remove();
     await user.save();
-    res.status(200).json("Chat entry deleted");
+
+    res.status(200).json({
+      message: "Chat entry deleted successfully",
+      user,
+    });
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -137,6 +198,7 @@ module.exports = {
   updateUser,
   changePassword,
   addExercise,
+  markExerciseAsDone,
   updateExercise,
   deleteExercise,
   addChat,
