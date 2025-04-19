@@ -26,7 +26,7 @@ const handleUserEmotion = async (req, res) => {
     const prompt = buildPrompt(user, feelingText);
 
     const gptRes = await openai.createChatCompletion({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
