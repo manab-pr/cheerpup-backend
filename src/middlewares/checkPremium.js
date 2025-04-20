@@ -1,3 +1,5 @@
+// checks if user is premium
+
 function checkPremium(req, res, next) {
     if (req.user && req.user.isPremium) {
       return next();
@@ -6,5 +8,5 @@ function checkPremium(req, res, next) {
     }
   }
   
-  module.exports = checkPremium;
+module.exports = checkPremium;
   

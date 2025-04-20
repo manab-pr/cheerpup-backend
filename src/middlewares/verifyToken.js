@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 
+// verify token middleware
+
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.token;
   if (authHeader) {
@@ -14,6 +16,9 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+
+// verify token and authorization middleware
+
 const verifyTokenandAuthorization = (req, res, next) => {
   verifyToken(req, res, () => {
     console.log("User ID from token:", req.user.id);
@@ -26,18 +31,9 @@ const verifyTokenandAuthorization = (req, res, next) => {
   });
 };
 
-const verifyTokenandAdmin = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.user.isAdmin) {
-      next();
-    } else {
-      res.status(403).json("You're not allowed to do that");
-    }
-  });
-};
+
 
 module.exports = {
   verifyToken,
-  verifyTokenandAuthorization,
-  verifyTokenandAdmin,
+  verifyTokenandAuthorization
 };

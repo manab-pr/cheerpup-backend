@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// Exercise schema
+
 const ExerciseSchema = new mongoose.Schema({
   name: { type: String },
   durationInDays: { type: Number },

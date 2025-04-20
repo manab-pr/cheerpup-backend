@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// Mood schema
+
 const MoodSchema = new mongoose.Schema({
   moodRating: { type: Number, min: 1, max: 5, required: true },
   mood: {

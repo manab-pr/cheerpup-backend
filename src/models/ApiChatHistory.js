@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+// ApiChatHistory schema
+
 const ApiChatHistorySchema = new mongoose.Schema({
   userMessage: { type: String, required: true },
   systemMessage: { type: String, required: false },

@@ -5,6 +5,8 @@ const { verifyToken } = require('../middlewares/verifyToken');
 const { handleEnhancedChat } = require('../controllers/enhancedChatController');
 const checkPremium = require('../middlewares/checkPremium');
 
+// openAi routes
+
 router.post('/chat', verifyToken, handleUserEmotion);
 router.post('/enhanced-chat', verifyToken, checkPremium, handleEnhancedChat);
 

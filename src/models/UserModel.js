@@ -3,6 +3,8 @@ const ExerciseSchema = require('./Exercise');
 const ApiChatHistorySchema = require('./ApiChatHistory');
 const MoodSchema = require('./Mood');
 
+// User schema
+
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, unique: true, sparse: true },

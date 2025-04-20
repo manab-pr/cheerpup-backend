@@ -2,7 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel');
 const cloudinary = require('cloudinary').v2;
-const { emailRegex, phoneRegex } = require('../constants/regex');
+const { emailRegex, phoneRegex } = require('../utils/regex');
+
+
+// handles user registration
 
 const register = async (req, res) => {
   try {
@@ -90,7 +93,7 @@ const register = async (req, res) => {
 };
 
 
-
+// handles user login
 
 const login = async (req, res) => {
   try {

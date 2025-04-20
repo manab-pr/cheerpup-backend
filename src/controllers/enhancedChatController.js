@@ -1,10 +1,9 @@
 const User = require('../models/UserModel');
 const openai = require('../config/openai');
 
-/**
- * POST /api/V1enhanced-chat
- * Description: Enhanced GPT interaction using rich user context and serious concern detection.
- */
+
+// Handles the enhanced chat route
+
 const handleEnhancedChat = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -17,10 +16,10 @@ const handleEnhancedChat = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // 📦 Build GPT prompt from user context
+    // Build GPT prompt from user context
     const prompt = buildEnhancedPrompt(user, feelingText);
 
-    // 🤖 GPT request
+    // GPT request
     const gptRes = await openai.createChatCompletion({
         model: 'gpt-4o', // good quality and fast
         messages: [
@@ -43,7 +42,7 @@ const handleEnhancedChat = async (req, res) => {
       - Optionally suggest 1 light physical or mental exercise that builds on their existing routines
       - Recommend 1 recent, emotionally relevant music track (song title only)
       
-      ⚠️ Detect SERIOUS messages (e.g., mentions of suicidal thoughts, hopelessness, giving up, self-harm).
+       Detect SERIOUS messages (e.g., mentions of suicidal thoughts, hopelessness, giving up, self-harm).
       Signs include:
       - Direct statements of harm or hopelessness
       - Sudden negative shift from previous mood patterns
@@ -53,14 +52,14 @@ const handleEnhancedChat = async (req, res) => {
       If ANY of these are present, add:
       "serious": true
       
-      🎵 MUSIC RULES:
+       MUSIC RULES:
       - Only return the **song title** (no link or artist)
       - Must be released after 2012
       - Match the emotional tone of your response
       - Consider user's previous music recommendations
       - Avoid defaulting to "Weightless" unless highly relevant
       
-      📦 RESPONSE FORMAT:
+       RESPONSE FORMAT:
       Return STRICT JSON only (no markdown, no extra formatting):
       
       {
@@ -85,7 +84,7 @@ const handleEnhancedChat = async (req, res) => {
 
     const content = gptRes.data.choices[0].message.content;
 
-    // 🧼 Parse GPT JSON safely
+    //  Parse GPT JSON safely
     let parsed;
     try {
       const cleaned = content
@@ -96,7 +95,7 @@ const handleEnhancedChat = async (req, res) => {
 
       parsed = JSON.parse(cleaned);
     } catch (err) {
-      console.warn('⚠️ GPT returned non-JSON.');
+      console.warn(' GPT returned non-JSON.');
       parsed = {
         response: content,
         suggestedActivity: [],
@@ -107,14 +106,14 @@ const handleEnhancedChat = async (req, res) => {
       };
     }
 
-    // 🚨 If serious concern is detected, flag it and increment count
+    //  If serious concern is detected, flag it and increment count
     let alertMessage = null;
     if (parsed.serious === true) {
       user.seriousAlertCount = (user.seriousAlertCount || 0) + 1;
-      alertMessage = `🚨 We're here for you. If you're feeling overwhelmed or in danger, please reach out to a mental health professional or someone you trust. You're not alone.`;
+      alertMessage = ` We're here for you. If you're feeling overwhelmed or in danger, please reach out to a mental health professional or someone you trust. You're not alone.`;
     }
 
-    // 🧠 Save chat in history
+    //  Save chat in history
     user.apiChatHistory.push({
       userMessage: feelingText,
       systemMessage: parsed.response,
@@ -125,7 +124,7 @@ const handleEnhancedChat = async (req, res) => {
         : { title: null },
     });
 
-    // 💾 Save mood
+    //  Save mood
     if (parsed.mood) {
       user.moods.push({
         mood: parsed.mood.mood,
@@ -135,7 +134,7 @@ const handleEnhancedChat = async (req, res) => {
 
     await user.save();
 
-    // ✅ Final response
+    //  Final response
     res.json({
       response: parsed.response,
       suggestedActivity: parsed.suggestedActivity,
@@ -149,14 +148,14 @@ const handleEnhancedChat = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('💥 Enhanced Chat Error:', err);
+    console.error(' Enhanced Chat Error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-/**
- * 🔧 Builds prompt with rich user context (profile + last 10 exercises + chats)
- */
+
+// Builds prompt with rich user context (profile + last 10 exercises + chats)
+
 function buildEnhancedPrompt(user, feelingText) {
   const lines = [];
 
@@ -179,7 +178,7 @@ function buildEnhancedPrompt(user, feelingText) {
   // Recent exercises
   if (user.exercises?.length) {
     const last10 = user.exercises.slice(-10);
-    lines.push(`\n🧘 Recent Exercises (last 10):`);
+    lines.push(`\n Recent Exercises (last 10):`);
     last10.forEach((ex, i) => {
       lines.push(`${i + 1}. ${ex.name} — ${ex.durationInDays} days, Streak: ${ex.streak?.join(',')}`);
     });
@@ -188,7 +187,7 @@ function buildEnhancedPrompt(user, feelingText) {
   // Chat history
   if (user.apiChatHistory?.length) {
     const last10 = user.apiChatHistory.slice(-10);
-    lines.push(`\n💬 Recent Conversations (last 10):`);
+    lines.push(`\n Recent Conversations (last 10):`);
     last10.forEach((entry, i) => {
       lines.push(`${i + 1}. User: "${entry.userMessage}" → CheerPup: "${entry.systemMessage}"`);
     });

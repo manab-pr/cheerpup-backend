@@ -17,11 +17,13 @@ const { singleUpload } = require('../middlewares/multer');
 
 const router = express.Router();
 
-// Profile update & password
+// Profile endpoints
 router.put('/:id', verifyTokenandAuthorization, singleUpload, updateUser);
 router.put('/password/:id', verifyTokenandAuthorization, changePassword);
+router.get('/:id', verifyTokenandAuthorization, getUserDetails);
 
-// Exercises
+
+// Exercise endpoints
 router.post('/exercise/:id', verifyTokenandAuthorization, addExercise);
 router.put('/exercise/:userId/:exerciseId', verifyTokenandAuthorization, updateExercise);
 router.put(
@@ -29,17 +31,13 @@ router.put(
   verifyTokenandAuthorization,
   markExerciseAsDone
 );
+router.get('/exercises/:id', verifyTokenandAuthorization, getUserExercises);
 router.delete('/exercise/:userId/:exerciseId', verifyTokenandAuthorization, deleteExercise);
 
-// Chat History
+// Chat History endpoints
 router.post('/chat/:id', verifyTokenandAuthorization, addChat);
 router.delete('/chat/:id/:chatId', verifyTokenandAuthorization, deleteChat);
 router.get('/chat/:id', verifyTokenandAuthorization, getChatHistory);
 
-// Get user details
-router.get('/:id', verifyTokenandAuthorization, getUserDetails);
-
-// Get exercises of user
-router.get('/exercises/:id', verifyTokenandAuthorization, getUserExercises);
 
 module.exports = router;

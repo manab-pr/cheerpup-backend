@@ -1,16 +1,13 @@
 const User = require('../models/UserModel');
 const openai = require('../config/openai');
 
-/**
- * Controller: Handle user's emotional input and generate a friendly,
- * caring response using OpenAI GPT, personalized with their data.
- * 
- * This route is token-protected. We extract the userId from the decoded token
- * attached by the verifyToken middleware.
- */
+//  Handle user's emotional input and generate a friendly,
+//  caring response using OpenAI GPT, personalized with their data.
+
+
 const handleUserEmotion = async (req, res) => {
   try {
-    // 🔐 User ID is pulled from the token (auth middleware already validated it)
+    // User ID is pulled from the token (auth middleware already validated it)
     const userId = req.user.id;
     const { feelingText } = req.body;
 
@@ -18,14 +15,14 @@ const handleUserEmotion = async (req, res) => {
       return res.status(400).json({ error: 'feelingText is required' });
     }
 
-    // 🔍 Fetch the full user from the database
+    // Fetch the full user from the database
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // 📦 Construct a personalized prompt using user history
+    // Construct a personalized prompt using user history
     const prompt = buildPrompt(user, feelingText);
 
-    // 🤖 Send prompt to OpenAI GPT
+    // Send prompt to OpenAI GPT
     const gptRes = await openai.createChatCompletion({
       model: 'gpt-4o',
       messages: [
@@ -43,13 +40,13 @@ When someone shares how they're feeling, you:
 - Suggest one calming, low-effort activity or mindfulness practice
 - Recommend one recent, emotionally fitting **song title** (no links)
 
-🎵 MUSIC RULES:
+ MUSIC RULES:
 - Must be released in 2012 or later
 - Must match the user's emotional state (happy, anxious, down, relaxed, etc.)
 - Avoid repeating songs or overused choices like "Weightless"
 - Only return the song **title** (no YouTube links)
 
-📦 OUTPUT FORMAT:
+ OUTPUT FORMAT:
 Respond with a **JSON object only** — no markdown, no formatting.
 
 You’ll be given:
@@ -65,7 +62,7 @@ Be emotionally present. Write from the heart like a real friend would.
       ],
     });
 
-    // 🧹 Parse GPT response and ensure valid structure
+    // Parse GPT response and ensure valid structure
     const content = gptRes.data.choices[0].message.content;
 
     let parsed;
@@ -79,7 +76,7 @@ Be emotionally present. Write from the heart like a real friend would.
       parsed = JSON.parse(cleaned);
     } catch (err) {
       // If GPT didn't return valid JSON, fallback to raw content as response
-      console.warn('⚠️ GPT response not valid JSON.');
+      console.warn(' GPT response not valid JSON.');
       parsed = {
         response: content,
         suggestedActivity: [],
@@ -89,7 +86,7 @@ Be emotionally present. Write from the heart like a real friend would.
       };
     }
 
-    // 🗂️ Add GPT response to user’s chat history
+    //  Add GPT response to user’s chat history
     user.apiChatHistory.push({
       userMessage: feelingText,
       systemMessage: parsed.response,
@@ -100,7 +97,7 @@ Be emotionally present. Write from the heart like a real friend would.
         : { title: null },
     });
 
-    // 🧠 Save user's interpreted mood snapshot from GPT
+    //  Save user's interpreted mood snapshot from GPT
     if (parsed.mood) {
       user.moods.push({
         mood: parsed.mood.mood,
@@ -110,7 +107,7 @@ Be emotionally present. Write from the heart like a real friend would.
 
     await user.save();
 
-    // ✅ Send GPT reply back to the client
+    //  Send GPT reply back to the client
     res.json({
       response: parsed.response,
       suggestedActivity: parsed.suggestedActivity,
@@ -122,19 +119,18 @@ Be emotionally present. Write from the heart like a real friend would.
     });
 
   } catch (err) {
-    console.error('💥 Chat error:', err);
+    console.error(' Chat error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-/**
- * 🔧 buildPrompt(user, feelingText)
- * Creates a context-rich prompt with personalized data:
- * - mood history
- * - medication
- * - last song
- * - basic demographic info
- */
+//  buildPrompt(user, feelingText)
+//  Creates a context-rich prompt with personalized data:
+//  - mood history
+//  - medication
+//  - last song
+//  - basic demographic info
+
 function buildPrompt(user, feelingText) {
   const qna = [];
 
@@ -174,7 +170,7 @@ function buildPrompt(user, feelingText) {
     ? `Here is some background info about the user:\n${qna.join('\n')}`
     : `The user hasn't provided much background info.`;
 
-  // 🧠 Final full prompt for GPT
+  //  Final full prompt for GPT
   return `${background}
 
 The user just said: "${feelingText}"
@@ -194,7 +190,7 @@ Please respond in this JSON format:
   }
 }
 
-✅ Rules:
+ Rules:
 - Only return the song name (no link)
 - Song must be released in 2012 or later
 - Match the user's mood

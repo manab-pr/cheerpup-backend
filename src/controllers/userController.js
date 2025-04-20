@@ -3,7 +3,8 @@ const User = require('../models/UserModel');
 const cloudinary = require('../config/cloudinary');
 
 
-// --- Profile Update ---
+// updates user profile
+
 const updateUser = async (req, res) => {
   try {
     const fields = [
@@ -52,7 +53,9 @@ const updateUser = async (req, res) => {
   }
 };
 
-// --- Change Password ---
+// handles changing user password 
+
+
 const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
@@ -74,7 +77,8 @@ const changePassword = async (req, res) => {
   }
 };
 
-// --- Exercises ---
+// handles adding exercises for user
+
 const addExercise = async (req, res) => {
   try {
     const { name, durationInDays } = req.body;
@@ -100,6 +104,8 @@ const addExercise = async (req, res) => {
   }
 };
 
+
+// marks an exercise as done on daily task complete
 
 const markExerciseAsDone = async (req, res) => {
   try {
@@ -139,6 +145,8 @@ if (!exercise) return res.status(404).json("Exercise not found");
   }
 };
 
+// handles updating exercises
+
 
 const updateExercise = async (req, res) => {
   try {
@@ -158,6 +166,9 @@ const updateExercise = async (req, res) => {
   }
 };
 
+
+// handles deleting exercises
+
 const deleteExercise = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
@@ -173,7 +184,9 @@ const deleteExercise = async (req, res) => {
   }
 };
 
-// --- API Chat History ---
+
+// handles adding chat history of eaach user
+
 const addChat = async (req, res) => {
   try {
     const { userMessage, systemMessage, suggestedExercise, suggestedActivity } = req.body;
@@ -189,6 +202,8 @@ const addChat = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// deletes chat of specific user
 
 const deleteChat = async (req, res) => {
   try {
@@ -219,6 +234,8 @@ const getChatHistory = async (req, res) => {
   }
 };
 
+//handles getting user details
+
 const getUserDetails = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -229,6 +246,8 @@ const getUserDetails = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// handles getting user exercises
 
 const getUserExercises = async (req, res) => {
   try {
