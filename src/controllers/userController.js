@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/UserModel');
+const cloudinary = require('../config/cloudinary');
+
 
 // --- Profile Update ---
 const updateUser = async (req, res) => {
